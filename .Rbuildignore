@@ -15,3 +15,5 @@ app/
 data-extraction/
 .github/
 ropensci.*
+^editor-checks\.md$
+^spellcheck-results\.md$

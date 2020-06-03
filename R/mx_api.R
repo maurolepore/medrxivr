@@ -14,7 +14,8 @@
 #' @family api
 #' @export
 #'
-#' @examples \dontrun{
+#' @examples
+#' \dontrun{
 #' mx_data <- mx_api()
 #' }
 #' @importFrom dplyr %>%
@@ -25,83 +26,79 @@ mx_api_content <- function(from.date = "2019-06-01",
                            clean = TRUE,
                            include.info = FALSE) {
 
-# Create baseline link
-base_link <- paste0("https://api.biorxiv.org/details/medrxiv/",
-               from.date,
-               "/",
-               to.date)
+  # Create baseline link
+  base_link <- paste0(
+    "https://api.biorxiv.org/details/medrxiv/",
+    from.date,
+    "/",
+    to.date
+  )
 
-details <-
-  httr::RETRY(
-    verb = "GET",
-    times = 3,
-    url = paste0(base_link, "/0"),
-    httr::timeout(30)
-  ) %>%
-  httr::content(as = "text", encoding = "UTF-8") %>%
-  jsonlite::fromJSON()
-
-# Check if API is working?
-
-count <- details$messages[1,6]
-message("Total number of records found: ",count)
-pages <- floor(count/100)
-
-# Create empty dataset
-df <- details$collection %>%
-  dplyr::filter(doi == "")
-
-
-
-# Get data
-message("Starting extraction from API")
-
-
-for (cursor in 0:pages) {
-
-  page <- cursor*100
-
-  message(paste0("Extracting records ",page+1," to ",page+100, " of ", count))
-
-  link <- paste0(base_link,"/",page)
-
-  tmp <- httr::RETRY(verb = "GET", url = link) %>%
+  details <-
+    httr::RETRY(
+      verb = "GET",
+      times = 3,
+      url = paste0(base_link, "/0"),
+      httr::timeout(30)
+    ) %>%
     httr::content(as = "text", encoding = "UTF-8") %>%
     jsonlite::fromJSON()
 
-  tmp <- tmp$collection
+  # Check if API is working?
 
-  df <- rbind(df, tmp)
+  count <- details$messages[1, 6]
+  message("Total number of records found: ", count)
+  pages <- floor(count / 100)
 
-}
-
-# Clean data
-
-if (clean == TRUE) {
-
-
-df$node <- seq_len(nrow(df))
+  # Create empty dataset
+  df <- details$collection %>%
+    dplyr::filter(doi == "")
 
 
-df <- df %>%
-  dplyr::select(-c(.data$type,.data$server))
 
-df$link <- paste0("/content/",df$doi,"v",df$version,"?versioned=TRUE")
-df$pdf <- paste0("/content/",df$doi,"v",df$version,".full.pdf")
-df$category <- stringr::str_to_title(df$category)
-df$authors <- stringr::str_to_title(df$authors)
-df$author_corresponding <- stringr::str_to_title(df$author_corresponding)
+  # Get data
+  message("Starting extraction from API")
 
-}
 
-if (include.info == TRUE) {
-  details <-
-    details$messages %>% dplyr::slice(rep(1:dplyr::n(), each = nrow(df)))
-  df <- cbind(df, details)
-}
+  for (cursor in 0:pages) {
+    page <- cursor * 100
 
-df
+    message(paste0("Extracting records ", page + 1, " to ", page + 100, " of ", count))
 
+    link <- paste0(base_link, "/", page)
+
+    tmp <- httr::RETRY(verb = "GET", url = link) %>%
+      httr::content(as = "text", encoding = "UTF-8") %>%
+      jsonlite::fromJSON()
+
+    tmp <- tmp$collection
+
+    df <- rbind(df, tmp)
+  }
+
+  # Clean data
+
+  if (clean == TRUE) {
+    df$node <- seq_len(nrow(df))
+
+
+    df <- df %>%
+      dplyr::select(-c(.data$type, .data$server))
+
+    df$link <- paste0("/content/", df$doi, "v", df$version, "?versioned=TRUE")
+    df$pdf <- paste0("/content/", df$doi, "v", df$version, ".full.pdf")
+    df$category <- stringr::str_to_title(df$category)
+    df$authors <- stringr::str_to_title(df$authors)
+    df$author_corresponding <- stringr::str_to_title(df$author_corresponding)
+  }
+
+  if (include.info == TRUE) {
+    details <-
+      details$messages %>% dplyr::slice(rep(1:dplyr::n(), each = nrow(df)))
+    df <- cbind(df, details)
+  }
+
+  df
 }
 
 
@@ -117,43 +114,37 @@ df
 #' @family api
 #' @export
 #'
-#' @examples \dontrun{
+#' @examples
+#' \dontrun{
 #' mx_data <- mx_api_doi("10.1101/2020.02.25.20021568")
 #' }
 #' @importFrom dplyr %>%
 #' @importFrom rlang .data
 
 mx_api_doi <- function(doi,
-                       clean = TRUE){
+                       clean = TRUE) {
+  base_link <- paste0("https://api.biorxiv.org/details/medrxiv/", doi)
 
-base_link <- paste0("https://api.biorxiv.org/details/medrxiv/",doi)
+  details <- httr::RETRY(verb = "GET", url = base_link, httr::timeout(30)) %>%
+    httr::content(as = "text", encoding = "UTF-8") %>%
+    jsonlite::fromJSON()
 
-details <- httr::RETRY(verb = "GET", url = base_link, httr::timeout(30)) %>%
-  httr::content(as = "text", encoding = "UTF-8") %>%
-  jsonlite::fromJSON()
+  df <- details$collection
 
-df <- details$collection
+  # Clean data
 
-# Clean data
+  if (clean == TRUE) {
+    df$node <- seq_len(nrow(df))
 
-if (clean == TRUE) {
+    df <- df %>%
+      dplyr::select(-c(.data$type, .data$server))
 
-  df$node <- seq_len(nrow(df))
+    df$link <- paste0("/content/", df$doi, "v", df$version, "?versioned=TRUE")
+    df$pdf <- paste0("/content/", df$doi, "v", df$version, ".full.pdf")
+    df$category <- stringr::str_to_title(df$category)
+    df$authors <- stringr::str_to_title(df$authors)
+    df$author_corresponding <- stringr::str_to_title(df$author_corresponding)
+  }
 
-  df <- df %>%
-    dplyr::select(-c(.data$type,.data$server))
-
-  df$link <- paste0("/content/",df$doi,"v",df$version,"?versioned=TRUE")
-  df$pdf <- paste0("/content/",df$doi,"v",df$version,".full.pdf")
-  df$category <- stringr::str_to_title(df$category)
-  df$authors <- stringr::str_to_title(df$authors)
-  df$author_corresponding <- stringr::str_to_title(df$author_corresponding)
-
+  df
 }
-
-df
-
-}
-
-
-

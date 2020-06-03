@@ -5,8 +5,10 @@ test_that("Require file", {
 
 
 mx_result <-
-data.frame(link_pdf = "https://medrxiv.org/content/10.1101/19007328v2.full.pdf",
-           ID = "69465")
+  data.frame(
+    link_pdf = "https://medrxiv.org/content/10.1101/19007328v2.full.pdf",
+    ID = "69465"
+  )
 
 test_that("Inital output", {
   skip_on_cran()
@@ -22,8 +24,8 @@ test_that("Already downloaded", {
   expect_message(mx_download(mx_result, "pdf"), regexp = "downloaded")
 })
 
-if (dir.exists("pdf")==TRUE){
-unlink("pdf", recursive = TRUE)
+if (dir.exists("pdf") == TRUE) {
+  unlink("pdf", recursive = TRUE)
 }
 
 test_that("Status update", {
@@ -33,8 +35,6 @@ test_that("Status update", {
   expect_message(mx_download(mx_result, "pdf", print_update = 1), regexp = "%")
 })
 
-if (dir.exists("pdf")==TRUE){
+if (dir.exists("pdf") == TRUE) {
   unlink("pdf", recursive = TRUE)
 }
-
-

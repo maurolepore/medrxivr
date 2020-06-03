@@ -5,9 +5,10 @@
 #' @param create TRUE or FALSE. If TRUE, creates the directory if it doesn't
 #'   exist
 #' @param print_update How frequently to print an update
-#' @examples \dontrun{
-#' mx_results <- mx_search("ecology",limit=20)
-#' mx_download(mx_results,"~/medrxivPDF")
+#' @examples
+#' \dontrun{
+#' mx_results <- mx_search("ecology", limit = 20)
+#' mx_download(mx_results, "~/medrxivPDF")
 #' }
 #' @family main
 #' @export
@@ -19,34 +20,39 @@
 mx_download <- function(mx_results,
                         directory,
                         create = TRUE,
-                        print_update = 10){
+                        print_update = 10) {
+  mx_results$filename <- paste0(mx_results$doi, "v", mx_results$version)
+  mx_results$filename <- gsub("/", "-", mx_results$filename)
 
-  mx_results$filename <- paste0(mx_results$doi,"v",mx_results$version)
-  mx_results$filename <- gsub("/","-",mx_results$filename)
+  print(paste0(
+    "Estimated time to completion: ",
+    round(length(mx_results$link_pdf) * 13 / 60 / 60, 2), " hours"
+  ))
 
-  print(paste0("Estimated time to completion: ",
-               round(length(mx_results$link_pdf)*13/60/60, 2), " hours"))
-
-  if(!file.exists(directory)  && create){
+  if (!file.exists(directory) && create) {
     dir.create(file.path(directory))
   }
 
   # Add trailing forward slash to the directory path
-  if(substr(directory,nchar(directory), nchar(directory)) != "/"){
-    directory <- paste(directory,"/",sep="")
+  if (substr(directory, nchar(directory), nchar(directory)) != "/") {
+    directory <- paste(directory, "/", sep = "")
   }
 
   number <- 1
 
   for (file_location in mx_results$link_pdf) {
-    if (file.exists(paste0(directory,
-                           mx_results$filename[which(mx_results$link_pdf ==
-                                                     file_location)],
-                           ".pdf"))) {
-      message(paste0("PDF for ID ",
-                     mx_results$filename[which(mx_results$link_pdf ==
-                                                                file_location)],
-                     " already downloaded."))
+    if (file.exists(paste0(
+      directory,
+      mx_results$filename[which(mx_results$link_pdf ==
+        file_location)],
+      ".pdf"
+    ))) {
+      message(paste0(
+        "PDF for ID ",
+        mx_results$filename[which(mx_results$link_pdf ==
+          file_location)],
+        " already downloaded."
+      ))
 
       number <- number + 1
 
@@ -54,14 +60,16 @@ mx_download <- function(mx_results,
     }
 
     while (TRUE) {
-      message(paste0("Downloading PDF ",
-                   number,
-                   " of ",
-                   length(mx_results$link_pdf),
-                   " (DOI: ",
-                   mx_results$filename[which(mx_results$link_pdf ==
-                                                       file_location)],
-                   "). . . "))
+      message(paste0(
+        "Downloading PDF ",
+        number,
+        " of ",
+        length(mx_results$link_pdf),
+        " (DOI: ",
+        mx_results$filename[which(mx_results$link_pdf ==
+          file_location)],
+        "). . . "
+      ))
 
       sleep_time <- runif(1, 10, 13)
       Sys.sleep(sleep_time)
@@ -73,8 +81,9 @@ mx_download <- function(mx_results,
           method = "auto",
           mode = "wb"
         ))
-      if (!is(pmx_results, 'try-error'))
+      if (!is(pmx_results, "try-error")) {
         break
+      }
     }
 
 
@@ -92,6 +101,5 @@ mx_download <- function(mx_results,
     }
 
     number <- number + 1
-
   }
 }
